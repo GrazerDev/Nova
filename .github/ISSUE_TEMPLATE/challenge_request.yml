@@ -1,0 +1,29 @@
+name: "🏟️ Propose a New Arena"
+description: Suggest a new math problem for the community to optimize.
+title: "[ARENA]: "
+body:
+  - type: textarea
+    id: logic
+    attributes:
+      label: Mathematical Logic
+      description: What algorithm should we benchmark? (e.g. Matrix Multiplication, Raytracing)
+      placeholder: "Describe the math here..."
+    validations:
+      required: true
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty Level
+      options:
+        - Easy (Logic)
+        - Medium (Memory Bound)
+        - Hard (CPU Intensive)
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Agreement
+      options:
+        - label: I understand that my logic must be compatible with C++20.
+          required: true
