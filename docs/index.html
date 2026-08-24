@@ -2,138 +2,123 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NOVA_FORGE // Execution Arena</title>
+    <title>NOVA_FORGE // TERMINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #050505; color: #00ff41; font-family: 'Fira Code', monospace; overflow-x: hidden; }
-        .glow { text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41; }
-        .border-glow { border: 1px solid #00ff41; box-shadow: 0 0 15px rgba(0, 255, 65, 0.2); }
-        .matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.1; pointer-events: none; }
-        .stat-card { background: rgba(0, 255, 65, 0.05); transition: all 0.3s; }
-        .stat-card:hover { background: rgba(0, 255, 65, 0.1); transform: translateY(-2px); }
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
+        
+        :root { --neon: #00ff41; --bg: #050505; }
+        body { background: var(--bg); color: var(--neon); font-family: 'Fira Code', monospace; margin: 0; overflow-x: hidden; }
+        
+        .matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.15; }
+        .glow { text-shadow: 0 0 10px var(--neon), 0 0 20px var(--neon); }
+        .border-neon { border: 1px solid var(--neon); box-shadow: 0 0 15px rgba(0, 255, 65, 0.2); }
+        .scanline {
+            width: 100%; height: 100px; z-index: 10; background: linear-gradient(0deg, rgba(0, 255, 65, 0) 0%, rgba(0, 255, 65, 0.1) 50%, rgba(0, 255, 65, 0) 100%);
+            position: fixed; top: -100px; left: 0; pointer-events: none; animation: scan 8s linear infinite;
+        }
+        @keyframes scan { 0% { top: -100px; } 100% { top: 100%; } }
+        .card { background: rgba(0, 20, 0, 0.8); backdrop-filter: blur(5px); }
     </style>
 </head>
 <body class="p-4 md:p-10">
     <canvas id="matrix" class="matrix-bg"></canvas>
+    <div class="scanline"></div>
 
-    <div class="max-w-5xl mx-auto">
-        <!-- Header -->
-        <header class="flex justify-between items-center border-b border-green-900 pb-6 mb-10">
+    <div class="max-w-6xl mx-auto">
+        <!-- HEADER -->
+        <header class="flex justify-between items-end border-b-2 border-green-900 pb-4 mb-8">
             <div>
-                <h1 class="text-4xl font-bold tracking-tighter glow italic">NOVA_FORGE <span class="text-xs align-top opacity-50">v1.0.4</span></h1>
-                <p class="text-sm opacity-60 font-light mt-1">> Global C++ Optimization Arena // [novaforge.work.gd]</p>
+                <h1 class="text-5xl font-bold glow tracking-tighter">NOVA_FORGE</h1>
+                <p class="text-xs mt-2 opacity-70">> GLOBAL_OPTIMIZATION_NODE: 0x77AF</p>
             </div>
-            <div class="text-right hidden md:block">
-                <div class="text-xs opacity-50 uppercase tracking-widest">System Status</div>
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span class="text-sm font-bold">WASM_ENGINE_READY</span>
+            <div class="text-right">
+                <div class="flex items-center gap-2 justify-end">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#00ff41]"></span>
+                    <span class="text-xs font-bold">WASM_ENGINE_ACTIVE</span>
                 </div>
+                <p class="text-[10px] opacity-40">AUTO_REPLOY_ENABLED: TRUE</p>
             </div>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Col: The Leaderboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- MAIN LEADERBOARD -->
             <div class="lg:col-span-2 space-y-6">
-                <section class="border-glow p-6 bg-black/80">
-                    <h2 class="text-xl font-bold mb-6 border-b border-green-900 pb-2 flex items-center justify-between">
-                        <span>🏆 RANK_LEADERBOARD</span>
-                        <span class="text-xs font-normal opacity-50">TOP_10_OPTIMIZERS</span>
-                    </h2>
-                    <div id="leaderboard-list" class="space-y-3">
-                        <!-- Rankings injected here -->
-                        <div class="animate-pulse py-4 text-center opacity-30 italic">Decrypting rankings...</div>
+                <div class="border-neon p-6 card">
+                    <div class="flex justify-between items-center mb-6 border-b border-green-900 pb-2">
+                        <h2 class="text-xl font-bold">🏆 [TOP_OPTIMIZERS]</h2>
+                        <span class="text-[10px] opacity-50">SORT_BY: PERFORMANCE_ASC</span>
                     </div>
-                </section>
+                    <div id="leaderboard" class="space-y-4 text-sm">
+                        <!-- Rankings loaded by JS -->
+                        <div class="animate-pulse">DECRYPTING_LEADERBOARD_DATA...</div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Right Col: The Action Info -->
+            <!-- SIDEBAR -->
             <div class="space-y-6">
-                <section class="border-glow p-6 bg-black/80">
-                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-                        <span class="text-green-500 underline">THE_CHALLENGE</span>
-                    </h3>
-                    <p class="text-xs leading-relaxed opacity-80 mb-4">
-                        Current Arena: <span class="text-white">Sieve of Eratosthenes (N=1,000,000)</span>. 
-                        Optimize the logic in <code class="bg-green-950 px-1">src/core.cpp</code> to climb the ranks.
+                <div class="border-neon p-4 card">
+                    <h3 class="text-sm font-bold border-b border-green-900 pb-2 mb-3 underline">ARENA_LOGS</h3>
+                    <p class="text-[11px] leading-relaxed mb-4">
+                        Current Challenge: <span class="text-white">Sieve of Eratosthenes</span><br>
+                        Goal: Find primes up to 1M.<br>
+                        Constraint: <span class="text-white">C++20 / WASM Standard</span>
                     </p>
-                    <a href="https://github.com/GrazerDev/Nova" class="block text-center py-2 border border-green-500 text-xs hover:bg-green-500 hover:text-black transition duration-300 font-bold">
-                        JOIN THE ARENA [FORK REPO]
+                    <a href="https://github.com/YOUR_USERNAME/YOUR_REPO/edit/main/src/core.cpp" target="_blank" 
+                       class="block text-center py-2 border-2 border-green-500 text-xs font-bold hover:bg-green-500 hover:text-black transition">
+                        INJECT_CODE.sh
                     </a>
-                </section>
+                </div>
 
-                <section class="border-glow p-6 bg-black/80">
-                    <h3 class="text-lg font-bold mb-4 underline">LIVE_SPECS</h3>
-                    <div class="space-y-4 text-[10px]">
-                        <div class="flex justify-between border-b border-green-900/30 pb-1">
-                            <span class="opacity-50 uppercase">Compiler</span>
-                            <span>Emscripten/LLVM 18.x</span>
-                        </div>
-                        <div class="flex justify-between border-b border-green-900/30 pb-1">
-                            <span class="opacity-50 uppercase">Optimization</span>
-                            <span>-O3 Aggressive</span>
-                        </div>
-                        <div class="flex justify-between border-b border-green-900/30 pb-1">
-                            <span class="opacity-50 uppercase">Architecture</span>
-                            <span>WebAssembly (WASM)</span>
-                        </div>
-                    </div>
-                </section>
+                <div class="border-neon p-4 card text-[10px] space-y-2 opacity-80">
+                    <p>> COMPILER: em++ (Clang 18)</p>
+                    <p>> FLAGS: -O3 -sWASM=1</p>
+                    <p>> TARGET: novaforge.work.gd</p>
+                </div>
             </div>
-        </main>
+        </div>
     </div>
 
     <script>
-        // Matrix Background Effect
+        // MATRIX EFFECT
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        const fontSize = 16;
-        const columns = canvas.width / fontSize;
-        const drops = Array(Math.floor(columns)).fill(1);
-
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const chars = "01010101010101010101ABCDEF";
+        const drops = Array(Math.floor(canvas.width/20)).fill(1);
         function draw() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#0F0';
-            ctx.font = fontSize + 'px monospace';
-            for (let i = 0; i < drops.length; i++) {
-                const text = letters.charAt(Math.floor(Math.random() * letters.length));
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            ctx.fillStyle = "rgba(0,0,0,0.05)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = "#0F0"; ctx.font = "15px monospace";
+            drops.forEach((y, i) => {
+                const text = chars[Math.floor(Math.random()*chars.length)];
+                ctx.fillText(text, i*20, y*20);
+                if(y*20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
                 drops[i]++;
-            }
+            });
         }
         setInterval(draw, 33);
 
-        // Fetch Rankings
-        async function fetchRankings() {
+        // LEADERBOARD FETCH
+        async function fetchRanks() {
             try {
                 const res = await fetch('leaderboard.json');
                 const data = await res.json();
-                const list = document.getElementById('leaderboard-list');
-                list.innerHTML = data.rankings.map((r, i) => `
-                    <div class="flex items-center justify-between p-4 stat-card border border-green-900/30 rounded">
+                document.getElementById('leaderboard').innerHTML = data.rankings.map((r, i) => `
+                    <div class="flex justify-between items-center p-3 border border-green-900/50 hover:bg-green-500/10 transition group">
                         <div class="flex items-center gap-4">
-                            <span class="text-2xl font-bold opacity-20">${(i + 1).toString().padStart(2, '0')}</span>
-                            <div>
-                                <div class="font-bold text-white tracking-wide">@${r.user}</div>
-                                <div class="text-[10px] opacity-40 italic">${r.date}</div>
-                            </div>
+                            <span class="opacity-30">#0${i+1}</span>
+                            <span class="font-bold text-white tracking-widest">@${r.user}</span>
                         </div>
-                        <div class="text-right">
-                            <div class="text-xl font-bold text-green-400">${r.score}<span class="text-[10px] ml-1 opacity-50">ms</span></div>
+                        <div class="flex items-center gap-6">
+                            <span class="text-[10px] opacity-40 hidden md:block">${r.date}</span>
+                            <span class="text-xl font-bold group-hover:glow">${r.score}ms</span>
                         </div>
                     </div>
                 `).join('');
-            } catch (e) {
-                console.error("Rankings offline");
-            }
+            } catch(e) { console.error("OFFLINE"); }
         }
-        fetchRankings();
+        fetchRanks();
     </script>
 </body>
 </html>
