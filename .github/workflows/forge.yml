@@ -2,10 +2,14 @@ name: NovaForge Engine
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/leaderboard.json'
+      - 'docs/engine.js'
+      - 'docs/engine.wasm'
+      - 'README.md'
   pull_request:
     branches: [ main ]
 
-# Standard permissions to allow the bot to comment and update files
 permissions:
   contents: write
   pull-requests: write
@@ -19,97 +23,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 🛠️ Setup Emscripten (C++ Compiler)
+      - name: 🛠️ Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
 
-      - name: 🔨 Compile C++ Core (High Optimization)
+      - name: 🔨 Compile C++ to WASM
         run: |
           em++ src/core.cpp -O3 \
           -s WASM=1 \
           -s ALLOW_MEMORY_GROWTH=1 \
           -s EXPORTED_FUNCTIONS="['_run_challenge']" \
-          -s EXPORTED_RUNTIME_METHODS="['cwrap', 'ccall']" \
-          -o docs/engine.js
-
-      - name: ⚡ Run Performance Benchmark
-        id: bench
-        run: |
-          # Create a temporary node script to test the WASM
-          echo "const m = require('./docs/engine.js');
-          m.onRuntimeInitialized = () => {
-            const start = performance.now();
-            const result = m._run_challenge(1000000);
-            const end = performance.now();
-            console.log('TIME:' + (end - start).toFixed(4));
-            process.exit(0);
-          };" > runner.js
-          
-          # Execute and capture time
-          RAW_TIME=$(node runner.js | grep 'TIME:' | cut -d: -f2)
-          echo "BENCH_TIME=$RAW_TIME" >> $GITHUB_ENV
-          echo "Execution Time: $RAW_TIME ms"
-
-      - name: 🤖 Pull Request Battle Bot
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let leaderboard;
-            try {
-              leaderboard = JSON.parse(fs.readFileSync('docs/leaderboard.json', 'utf8'));
-            } catch (e) {
-              leaderboard = { rankings: [] };
-            }
-            
-            const currentBest = leaderboard.rankings[0]?.score || 999999;
-            const userTime = parseFloat(process.env.BENCH_TIME);
-            const username = context.payload.pull_request.user.login;
-            
-            let message = "";
-            if (userTime < currentBest) {
-              message = `### 🚀 HOLY SMOKES, @${username}!\n\n**NEW WORLD RECORD DETECTED!**\n\nYour code ran in **${userTime}ms**, smashing the previous record of **${currentBest}ms**.\n\nMerge this PR now to claim your throne on https://novaforge.work.gd!`;
-            } else {
-              message = `### ❌ Performance Analysis for @${username}\n\nYour code ran in **${userTime}ms**.\n\nThe current King's record is **${currentBest}ms**.\n\nYou are **${(userTime - currentBest).toFixed(4)}ms** away from glory. Keep optimizing!`;
-            }
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            });
-
-      - name: 📈 Update Official Leaderboard
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          python3 -c "
-          import json, os, datetime
-          path = 'docs/leaderboard.json'
-          if not os.path.exists(path):
-              data = {'rankings': []}
-          else:
-              with open(path, 'r') as f:
-                  data = json.load(f)
-          
-          new_entry = {
-              'user': '${{ github.actor }}', 
-              'score': float(os.environ['BENCH_TIME']), 
-              'date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-          }
-          data['rankings'].append(new_entry)
-          # Sort by score (ascending) and keep top 10
-          data['rankings'] = sorted(data['rankings'], key=lambda x: x['score'])[:10]
-          
-          with open(path, 'w') as f:
-              json.dump(data, f, indent=2)
-          "
-          
-      - name: 🚀 Push Changes to Website
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          git config --global user.name "NovaForge Bot"
-          git config --global user.email "bot@novaforge.work.gd"
-          git add docs/leaderboard.json docs/engine.js docs/engine.wasm
-          # Only commit if there are actually changes
-          git diff --quiet && git diff --staged --quiet || (git commit -m "🏆 NEW RECORD: ${{ github.actor }} [${{ env.BENCH_TIME }}ms]" && git push)
+          -s EXPORTED_RUNTIME_METHODS="['cwrap
