@@ -1,46 +1,139 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>NovaForge | Decentralized Computing</title>
+    <meta charset="UTF-8">
+    <title>NOVA_FORGE // Execution Arena</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #0f172a; color: #38bdf8; font-family: 'Courier New', monospace; }
-        .glow { text-shadow: 0 0 10px #38bdf8; }
+        body { background-color: #050505; color: #00ff41; font-family: 'Fira Code', monospace; overflow-x: hidden; }
+        .glow { text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41; }
+        .border-glow { border: 1px solid #00ff41; box-shadow: 0 0 15px rgba(0, 255, 65, 0.2); }
+        .matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.1; pointer-events: none; }
+        .stat-card { background: rgba(0, 255, 65, 0.05); transition: all 0.3s; }
+        .stat-card:hover { background: rgba(0, 255, 65, 0.1); transform: translateY(-2px); }
     </style>
 </head>
-<body class="p-10">
-    <div class="max-w-4xl mx-auto border border-sky-500 p-8 shadow-[0_0_20px_rgba(56,189,248,0.3)]">
-        <h1 class="text-4xl font-bold mb-4 glow tracking-widest">NOVA_FORGE v1.0</h1>
-        <p class="mb-8 opacity-70">> Benchmarking C++ via WASM on GitHub Actions Infrastructure...</p>
-        
-        <div class="grid grid-cols-2 gap-4">
-            <div class="border border-sky-900 p-4 bg-slate-900">
-                <h2 class="text-xl mb-2 underline">Live Leaderboard</h2>
-                <div id="leaderboard">Loading rankings...</div>
+<body class="p-4 md:p-10">
+    <canvas id="matrix" class="matrix-bg"></canvas>
+
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="flex justify-between items-center border-b border-green-900 pb-6 mb-10">
+            <div>
+                <h1 class="text-4xl font-bold tracking-tighter glow italic">NOVA_FORGE <span class="text-xs align-top opacity-50">v1.0.4</span></h1>
+                <p class="text-sm opacity-60 font-light mt-1">> Global C++ Optimization Arena // [novaforge.work.gd]</p>
             </div>
-            <div class="border border-sky-900 p-4 bg-slate-900">
-                <h2 class="text-xl mb-2 underline">System Status</h2>
-                <div id="stats">
-                    <p>Stars: <span id="star-count">...</span></p>
-                    <p>Engine: WASM/O3</p>
+            <div class="text-right hidden md:block">
+                <div class="text-xs opacity-50 uppercase tracking-widest">System Status</div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-sm font-bold">WASM_ENGINE_READY</span>
                 </div>
             </div>
-        </div>
+        </header>
 
-        <div class="mt-8">
-            <button onclick="runLocal()" class="bg-sky-600 text-white px-6 py-2 hover:bg-sky-400 transition">RUN LOCAL BENCHMARK</button>
-        </div>
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Col: The Leaderboard -->
+            <div class="lg:col-span-2 space-y-6">
+                <section class="border-glow p-6 bg-black/80">
+                    <h2 class="text-xl font-bold mb-6 border-b border-green-900 pb-2 flex items-center justify-between">
+                        <span>🏆 RANK_LEADERBOARD</span>
+                        <span class="text-xs font-normal opacity-50">TOP_10_OPTIMIZERS</span>
+                    </h2>
+                    <div id="leaderboard-list" class="space-y-3">
+                        <!-- Rankings injected here -->
+                        <div class="animate-pulse py-4 text-center opacity-30 italic">Decrypting rankings...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Col: The Action Info -->
+            <div class="space-y-6">
+                <section class="border-glow p-6 bg-black/80">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <span class="text-green-500 underline">THE_CHALLENGE</span>
+                    </h3>
+                    <p class="text-xs leading-relaxed opacity-80 mb-4">
+                        Current Arena: <span class="text-white">Sieve of Eratosthenes (N=1,000,000)</span>. 
+                        Optimize the logic in <code class="bg-green-950 px-1">src/core.cpp</code> to climb the ranks.
+                    </p>
+                    <a href="https://github.com/GrazerDev/Nova" class="block text-center py-2 border border-green-500 text-xs hover:bg-green-500 hover:text-black transition duration-300 font-bold">
+                        JOIN THE ARENA [FORK REPO]
+                    </a>
+                </section>
+
+                <section class="border-glow p-6 bg-black/80">
+                    <h3 class="text-lg font-bold mb-4 underline">LIVE_SPECS</h3>
+                    <div class="space-y-4 text-[10px]">
+                        <div class="flex justify-between border-b border-green-900/30 pb-1">
+                            <span class="opacity-50 uppercase">Compiler</span>
+                            <span>Emscripten/LLVM 18.x</span>
+                        </div>
+                        <div class="flex justify-between border-b border-green-900/30 pb-1">
+                            <span class="opacity-50 uppercase">Optimization</span>
+                            <span>-O3 Aggressive</span>
+                        </div>
+                        <div class="flex justify-between border-b border-green-900/30 pb-1">
+                            <span class="opacity-50 uppercase">Architecture</span>
+                            <span>WebAssembly (WASM)</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
     </div>
 
     <script>
-        // Use GitHub API to get repo data
-        async function fetchRepoData() {
-            const res = await fetch('https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO_NAME');
-            const data = await res.json();
-            document.getElementById('star-count').innerText = data.stargazers_count;
+        // Matrix Background Effect
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
         }
-        fetchRepoData();
+        setInterval(draw, 33);
+
+        // Fetch Rankings
+        async function fetchRankings() {
+            try {
+                const res = await fetch('leaderboard.json');
+                const data = await res.json();
+                const list = document.getElementById('leaderboard-list');
+                list.innerHTML = data.rankings.map((r, i) => `
+                    <div class="flex items-center justify-between p-4 stat-card border border-green-900/30 rounded">
+                        <div class="flex items-center gap-4">
+                            <span class="text-2xl font-bold opacity-20">${(i + 1).toString().padStart(2, '0')}</span>
+                            <div>
+                                <div class="font-bold text-white tracking-wide">@${r.user}</div>
+                                <div class="text-[10px] opacity-40 italic">${r.date}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl font-bold text-green-400">${r.score}<span class="text-[10px] ml-1 opacity-50">ms</span></div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error("Rankings offline");
+            }
+        }
+        fetchRankings();
     </script>
-    <script src="engine.js"></script>
 </body>
 </html>
