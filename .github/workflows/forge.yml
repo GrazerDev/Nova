@@ -1,47 +1,98 @@
-name: The NovaForge Engine
+name: NovaForge Engine
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
-  build-and-benchmark:
+  forge-process:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Emscripten (WASM Compiler)
-        run: |
-          git clone https://github.com/emscripten-core/emsdk.git
-          cd emsdk
-          ./emsdk install latest
-          ./emsdk activate latest
-          
-      - name: Compile C++ to WASM
-        run: |
-          source ./emsdk/emsdk_env.sh
-          emcc src/core.cpp -O3 -s WASM=1 -s EXPORTED_FUNCTIONS="['_run_challenge']" -o docs/engine.js
-
-      - name: Run Benchmark
-        run: |
-          # Use Node to time the execution
-          echo "const m = require('./docs/engine.js'); m.onRuntimeInitialized = () => { 
-            const start = Date.now();
-            m._run_challenge(1000000); 
-            console.log(Date.now() - start); 
-          };" > bench.js
-          TIME=$(node bench.js)
-          echo "BENCH_TIME=$TIME" >> $GITHUB_ENV
-
-      - name: Update Leaderboard JSON
-        if: github.event_name == 'push'
-        run: |
-          # Logic to append user and TIME to docs/leaderboard.json
-          echo "{\"user\": \"${{ github.actor }}\", \"score\": ${{ env.BENCH_TIME }}}" > docs/latest.json
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
+          fetch-depth: 0
+
+      - name: Setup Emscripten (C++ to WASM)
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Compile C++ Core
+        run: |
+          emcc src/core.cpp -O3 \
+          -s WASM=1 \
+          -s EXPORTED_FUNCTIONS="['_run_challenge']" \
+          -s EXPORTED_RUNTIME_METHODS="['cwrap']" \
+          -o docs/engine.js
+
+      - name: Run Performance Benchmark
+        id: bench
+        run: |
+          # Create a temporary node script to test the WASM
+          echo "const m = require('./docs/engine.js');
+          m.onRuntimeInitialized = () => {
+            const start = performance.now();
+            const result = m._run_challenge(1000000);
+            const end = performance.now();
+            console.log('TIME:' + (end - start).toFixed(4));
+            process.exit(0);
+          };" > runner.js
+          
+          # Execute and capture time
+          RAW_TIME=$(node runner.js | grep 'TIME:' | cut -d: -f2)
+          echo "BENCH_TIME=$RAW_TIME" >> $GITHUB_ENV
+          echo "Execution Time: $RAW_TIME ms"
+
+      - name: Pull Request Battle Bot
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const leaderboard = JSON.parse(fs.readFileSync('docs/leaderboard.json', 'utf8'));
+            const currentBest = leaderboard.rankings[0]?.score || 999999;
+            const userTime = parseFloat(process.env.BENCH_TIME);
+            
+            let message = "";
+            if (userTime < currentBest) {
+              message = `### 🚀 NEW RECORD DETECTED!\nYour code ran in **${userTime}ms**, beating the current record of **${currentBest}ms**!\nMerge this PR to claim the throne.`;
+            } else {
+              message = `### ❌ Performance Check\nYour code ran in **${userTime}ms**. The current record is **${currentBest}ms**.\nYou need to shave off **${(userTime - currentBest).toFixed(4)}ms** to become King.`;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
+
+      - name: Update Official Leaderboard
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          # Use Python to update the JSON safely
+          python3 -c "
+          import json, os
+          with open('docs/leaderboard.json', 'r') as f:
+              data = json.load(f)
+          
+          new_entry = {'user': '${{ github.actor }}', 'score': float(os.environ['BENCH_TIME']), 'date': '${{ github.event.head_commit.timestamp }}'}
+          data['rankings'].append(new_entry)
+          data['rankings'] = sorted(data['rankings'], key=lambda x: x['score'])[:10] # Keep top 10
+          
+          with open('docs/leaderboard.json', 'w') as f:
+              json.dump(data, f, indent=2)
+          "
+          
+      - name: Commit and Push Changes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config --global user.name "NovaForge Bot"
+          git config --global user.email "bot@novaforge.work.gd"
+          git add docs/leaderboard.json docs/engine.js docs/engine.wasm
+          git commit -m "🏆 Update Leaderboard: ${{ github.actor }} [${{ env.BENCH_TIME }}ms]"
+          git push
