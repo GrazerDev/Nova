@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NovaForge | Decentralized Computing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0f172a; color: #38bdf8; font-family: 'Courier New', monospace; }
+        .glow { text-shadow: 0 0 10px #38bdf8; }
+    </style>
+</head>
+<body class="p-10">
+    <div class="max-w-4xl mx-auto border border-sky-500 p-8 shadow-[0_0_20px_rgba(56,189,248,0.3)]">
+        <h1 class="text-4xl font-bold mb-4 glow tracking-widest">NOVA_FORGE v1.0</h1>
+        <p class="mb-8 opacity-70">> Benchmarking C++ via WASM on GitHub Actions Infrastructure...</p>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div class="border border-sky-900 p-4 bg-slate-900">
+                <h2 class="text-xl mb-2 underline">Live Leaderboard</h2>
+                <div id="leaderboard">Loading rankings...</div>
+            </div>
+            <div class="border border-sky-900 p-4 bg-slate-900">
+                <h2 class="text-xl mb-2 underline">System Status</h2>
+                <div id="stats">
+                    <p>Stars: <span id="star-count">...</span></p>
+                    <p>Engine: WASM/O3</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8">
+            <button onclick="runLocal()" class="bg-sky-600 text-white px-6 py-2 hover:bg-sky-400 transition">RUN LOCAL BENCHMARK</button>
+        </div>
+    </div>
+
+    <script>
+        // Use GitHub API to get repo data
+        async function fetchRepoData() {
+            const res = await fetch('https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO_NAME');
+            const data = await res.json();
+            document.getElementById('star-count').innerText = data.stargazers_count;
+        }
+        fetchRepoData();
+    </script>
+    <script src="engine.js"></script>
+</body>
+</html>
