@@ -1,5 +1,14 @@
 {
   "rankings": [
-    { "user": "NovaForge_Bot", "score": 999.99, "date": "2024-01-01" }
+    {
+      "user": "GrazerDev",
+      "score": 12.6453,
+      "date": "2026-08-24 17:50"
+    },
+    {
+      "user": "NovaForge_Bot",
+      "score": 999.99,
+      "date": "2024-01-01"
+    }
   ]
 }
