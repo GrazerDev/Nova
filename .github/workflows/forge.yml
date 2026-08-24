@@ -5,6 +5,7 @@ on:
   pull_request:
     branches: [ main ]
 
+# Standard permissions to allow the bot to comment and update files
 permissions:
   contents: write
   pull-requests: write
@@ -13,23 +14,24 @@ jobs:
   forge-process:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: 🛰️ Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Emscripten (C++ to WASM)
+      - name: 🛠️ Setup Emscripten (C++ Compiler)
         uses: mymindstorm/setup-emsdk@v14
 
-      - name: Compile C++ Core
+      - name: 🔨 Compile C++ Core (High Optimization)
         run: |
-          emcc src/core.cpp -O3 \
+          em++ src/core.cpp -O3 \
           -s WASM=1 \
+          -s ALLOW_MEMORY_GROWTH=1 \
           -s EXPORTED_FUNCTIONS="['_run_challenge']" \
-          -s EXPORTED_RUNTIME_METHODS="['cwrap']" \
+          -s EXPORTED_RUNTIME_METHODS="['cwrap', 'ccall']" \
           -o docs/engine.js
 
-      - name: Run Performance Benchmark
+      - name: ⚡ Run Performance Benchmark
         id: bench
         run: |
           # Create a temporary node script to test the WASM
@@ -47,21 +49,28 @@ jobs:
           echo "BENCH_TIME=$RAW_TIME" >> $GITHUB_ENV
           echo "Execution Time: $RAW_TIME ms"
 
-      - name: Pull Request Battle Bot
+      - name: 🤖 Pull Request Battle Bot
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const leaderboard = JSON.parse(fs.readFileSync('docs/leaderboard.json', 'utf8'));
+            let leaderboard;
+            try {
+              leaderboard = JSON.parse(fs.readFileSync('docs/leaderboard.json', 'utf8'));
+            } catch (e) {
+              leaderboard = { rankings: [] };
+            }
+            
             const currentBest = leaderboard.rankings[0]?.score || 999999;
             const userTime = parseFloat(process.env.BENCH_TIME);
+            const username = context.payload.pull_request.user.login;
             
             let message = "";
             if (userTime < currentBest) {
-              message = `### 🚀 NEW RECORD DETECTED!\nYour code ran in **${userTime}ms**, beating the current record of **${currentBest}ms**!\nMerge this PR to claim the throne.`;
+              message = `### 🚀 HOLY SMOKES, @${username}!\n\n**NEW WORLD RECORD DETECTED!**\n\nYour code ran in **${userTime}ms**, smashing the previous record of **${currentBest}ms**.\n\nMerge this PR now to claim your throne on https://novaforge.work.gd!`;
             } else {
-              message = `### ❌ Performance Check\nYour code ran in **${userTime}ms**. The current record is **${currentBest}ms**.\nYou need to shave off **${(userTime - currentBest).toFixed(4)}ms** to become King.`;
+              message = `### ❌ Performance Analysis for @${username}\n\nYour code ran in **${userTime}ms**.\n\nThe current King's record is **${currentBest}ms**.\n\nYou are **${(userTime - currentBest).toFixed(4)}ms** away from glory. Keep optimizing!`;
             }
             
             github.rest.issues.createComment({
@@ -71,28 +80,36 @@ jobs:
               body: message
             });
 
-      - name: Update Official Leaderboard
+      - name: 📈 Update Official Leaderboard
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          # Use Python to update the JSON safely
           python3 -c "
-          import json, os
-          with open('docs/leaderboard.json', 'r') as f:
-              data = json.load(f)
+          import json, os, datetime
+          path = 'docs/leaderboard.json'
+          if not os.path.exists(path):
+              data = {'rankings': []}
+          else:
+              with open(path, 'r') as f:
+                  data = json.load(f)
           
-          new_entry = {'user': '${{ github.actor }}', 'score': float(os.environ['BENCH_TIME']), 'date': '${{ github.event.head_commit.timestamp }}'}
+          new_entry = {
+              'user': '${{ github.actor }}', 
+              'score': float(os.environ['BENCH_TIME']), 
+              'date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+          }
           data['rankings'].append(new_entry)
-          data['rankings'] = sorted(data['rankings'], key=lambda x: x['score'])[:10] # Keep top 10
+          # Sort by score (ascending) and keep top 10
+          data['rankings'] = sorted(data['rankings'], key=lambda x: x['score'])[:10]
           
-          with open('docs/leaderboard.json', 'w') as f:
+          with open(path, 'w') as f:
               json.dump(data, f, indent=2)
           "
           
-      - name: Commit and Push Changes
+      - name: 🚀 Push Changes to Website
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           git config --global user.name "NovaForge Bot"
           git config --global user.email "bot@novaforge.work.gd"
           git add docs/leaderboard.json docs/engine.js docs/engine.wasm
-          git commit -m "🏆 Update Leaderboard: ${{ github.actor }} [${{ env.BENCH_TIME }}ms]"
-          git push
+          # Only commit if there are actually changes
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🏆 NEW RECORD: ${{ github.actor }} [${{ env.BENCH_TIME }}ms]" && git push)
