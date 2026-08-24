@@ -1,0 +1,47 @@
+name: The NovaForge Engine
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Emscripten (WASM Compiler)
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          
+      - name: Compile C++ to WASM
+        run: |
+          source ./emsdk/emsdk_env.sh
+          emcc src/core.cpp -O3 -s WASM=1 -s EXPORTED_FUNCTIONS="['_run_challenge']" -o docs/engine.js
+
+      - name: Run Benchmark
+        run: |
+          # Use Node to time the execution
+          echo "const m = require('./docs/engine.js'); m.onRuntimeInitialized = () => { 
+            const start = Date.now();
+            m._run_challenge(1000000); 
+            console.log(Date.now() - start); 
+          };" > bench.js
+          TIME=$(node bench.js)
+          echo "BENCH_TIME=$TIME" >> $GITHUB_ENV
+
+      - name: Update Leaderboard JSON
+        if: github.event_name == 'push'
+        run: |
+          # Logic to append user and TIME to docs/leaderboard.json
+          echo "{\"user\": \"${{ github.actor }}\", \"score\": ${{ env.BENCH_TIME }}}" > docs/latest.json
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
