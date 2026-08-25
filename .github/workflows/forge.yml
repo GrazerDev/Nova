@@ -3,6 +3,8 @@ on:
   push:
     branches: [ main ]
     paths-ignore:
+      - 'docs/engine.js'
+      - 'docs/engine.wasm'
       - 'docs/leaderboard.json'
       - 'README.md'
   pull_request:
@@ -10,7 +12,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   forge-process:
@@ -37,17 +38,11 @@ jobs:
       - name: ⏱️ Run Benchmark
         run: node judge.js
 
-      - name: 📊 Save Performance Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: performance-stats
-          path: stats.json
-
       - name: ✅ Update Docs (Auto-Deploy)
         if: github.event_name == 'push'
         run: |
           git config --global user.name "NovaForge Bot"
           git config --global user.email "bot@novaforge.engine"
           git add docs/engine.js docs/engine.wasm
-          git commit -m "🚀 Automated Build: Update WASM Engine" || echo "No changes to commit"
+          git commit -m "🚀 Automated Build: Update WASM Engine [skip ci]" || echo "No changes to commit"
           git push
