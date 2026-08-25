@@ -127,3 +127,19 @@
     </script>
 </body>
 </html>
+<div id="arena-status">
+    <h1>Current King's Record: <span id="record-time">Loading...</span></h1>
+    <p>Last Defended: <span id="last-updated">-</span></p>
+    <a href="https://github.com/GrazerDev/Nova">⚔️ Challenge the King</a>
+</div>
+
+<script>
+    // This pulls the data the bot just generated!
+    fetch('stats.json')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('record-time').innerText = data.time_ms + "ms";
+            document.getElementById('last-updated').innerText = new Date(data.last_run).toLocaleDateString();
+        })
+        .catch(err => console.log("Arena is initializing..."));
+</script>
