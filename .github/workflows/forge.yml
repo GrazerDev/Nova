@@ -32,4 +32,5 @@ jobs:
           -s WASM=1 \
           -s ALLOW_MEMORY_GROWTH=1 \
           -s EXPORTED_FUNCTIONS="['_run_challenge']" \
-          -s EXPORTED_RUNTIME_METHODS="['cwrap
+          -s EXPORTED_RUNTIME_METHODS="['cwrap']" \
+          -o docs/engine.js
