@@ -1,139 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>NovaForge // Performance Arena</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Fira+Code:wght@400;500&display=swap');
-        
-        body { 
-            background-color: #0f172a; /* Deep Slate Blue */
-            color: #f1f5f9; 
-            font-family: 'Inter', sans-serif;
-        }
-        .mono { font-family: 'Fira Code', monospace; }
-        .card { 
-            background: #1e293b; 
-            border: 1px solid #334155;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-        .accent-text { color: #38bdf8; } /* Soft Sky Blue */
-        .rank-row { transition: background 0.2s; border-bottom: 1px solid #334155; }
-        .rank-row:hover { background: #334155; }
-        .btn-primary {
-            background: #38bdf8;
-            color: #0f172a;
-            transition: opacity 0.2s;
-        }
-        .btn-primary:hover { opacity: 0.9; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovaForge // Performance Arena</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg:        #0a0b08;
+    --panel:     #121309;
+    --panel-2:   #17190d;
+    --line:      #2a2a1a;
+    --amber:     #ffb627;
+    --amber-dim: #8a6a1f;
+    --parchment: #e9dfc4;
+    --muted: #79735c;
+    --red:   #ff5f56;
+    --green: #7bd88f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    background: var(--bg);
+    color: var(--parchment);
+    font-family: 'IBM Plex Mono', monospace;
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .display{ font-family: 'JetBrains Mono', monospace; }
+
+  /* subtle CRT vignette + scanlines — quiet, not a strobe */
+  body::before{
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    background:
+      radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 130%);
+  }
+  body::after{
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 51;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,182,39,0.025) 0px,
+      rgba(255,182,39,0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .flicker{ animation: flicker 6s infinite; }
+  }
+  @keyframes flicker{
+    0%, 96%, 100% { opacity: 1; }
+    97% { opacity: 0.94; }
+    98% { opacity: 1; }
+  }
+
+  .term{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: 0 0 0 1px rgba(255,182,39,0.03), 0 12px 40px -12px rgba(0,0,0,0.8);
+  }
+  .term-head{
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .dot{ width:9px; height:9px; border-radius:9999px; display:inline-block; }
+
+  .row{ border-bottom: 1px solid var(--line); transition: background 0.15s ease; }
+  .row:last-child{ border-bottom: none; }
+  .row:hover{ background: rgba(255,182,39,0.04); }
+
+  .glow{ text-shadow: 0 0 14px rgba(255,182,39,0.35); }
+  .glow-sm{ text-shadow: 0 0 8px rgba(255,182,39,0.25); }
+
+  .cursor{
+    display:inline-block;
+    width:0.55em; height:1em;
+    background: var(--amber);
+    margin-left: 6px;
+    vertical-align: -2px;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .cursor{ animation: blink 1.1s steps(1) infinite; }
+  }
+  @keyframes blink{ 50%{ opacity: 0; } }
+
+  .btn-op{
+    background: var(--amber);
+    color: #14140a;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .btn-op:hover{ opacity: 0.92; transform: translateY(-1px); }
+  .btn-op:active{ transform: translateY(0); }
+
+  .rank-num{
+    font-variant-numeric: tabular-nums;
+    color: var(--amber-dim);
+  }
+  .row:first-child .rank-num{ color: var(--amber); }
+
+  ::selection{ background: var(--amber); color: #14140a; }
+
+  .divider{
+    color: var(--amber-dim);
+    letter-spacing: 0.02em;
+    white-space: pre;
+    overflow-x: auto;
+  }
+</style>
 </head>
-<body class="p-6 md:p-12">
+<body class="p-4 md:p-10 flicker">
 
-    <div class="max-w-5xl mx-auto">
-        <!-- HEADER -->
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold tracking-tight">NovaForge <span class="text-slate-500 font-light text-xl">/ Arena</span></h1>
-                <p class="text-slate-400 text-sm mt-1">Global C++ Optimization Benchmarks</p>
-            </div>
-            <div class="flex items-center gap-3 px-4 py-2 bg-slate-800 rounded-full border border-slate-700">
-                <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
-                </span>
-                <span class="text-xs font-medium text-slate-300 mono">WASM_NODE_ONLINE</span>
-            </div>
-        </header>
+  <div class="max-w-5xl mx-auto relative z-10">
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- LEADERBOARD -->
-            <div class="lg:col-span-2">
-                <div class="card rounded-xl overflow-hidden">
-                    <div class="px-6 py-4 bg-slate-800/50 border-bottom border-slate-700 flex justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Current Rankings</span>
-                        <span class="text-xs mono text-sky-400">N=1,000,000</span>
-                    </div>
-                    <div id="leaderboard" class="divide-y divide-slate-700">
-                        <!-- Rankings loaded by JS -->
-                        <div class="p-8 text-center text-slate-500 italic">Connecting to node...</div>
-                    </div>
-                </div>
-            </div>
+    <!-- HEADER -->
+    <header class="term rounded-md mb-8 overflow-hidden">
+      <div class="term-head px-4 py-2.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="dot" style="background:var(--red)"></span>
+          <span class="dot" style="background:var(--amber-dim)"></span>
+          <span class="dot" style="background:var(--green)"></span>
+          <span class="text-[11px] text-[var(--muted)] ml-3">arena@novaforge:~</span>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-[var(--muted)]">
+          <span class="relative flex h-1.5 w-1.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background:var(--amber)"></span>
+            <span class="relative inline-flex rounded-full h-1.5 w-1.5" style="background:var(--amber)"></span>
+          </span>
+          WASM_NODE_ONLINE
+        </div>
+      </div>
+      <div class="px-6 py-6 md:px-8 md:py-8">
+        <div class="text-[var(--muted)] text-xs mb-2">$ cat ./arena/README</div>
+        <h1 class="display text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--parchment)] glow">
+          NOVAFORGE <span style="color:var(--amber-dim)">/</span> ARENA<span class="cursor"></span>
+        </h1>
+        <p class="text-[var(--muted)] text-sm mt-2">Global C++ optimization benchmarks — every PR gets timed.</p>
+      </div>
+    </header>
 
-            <!-- INFO SIDEBAR -->
-            <div class="space-y-6">
-                <div class="card rounded-xl p-6">
-                    <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">The Challenge</h3>
-                    <p class="text-sm text-slate-300 leading-relaxed mb-6">
-                        Optimize the <span class="accent-text mono">src/core.cpp</span> sieve algorithm. 
-                        Submit a PR to trigger the automated benchmark.
-                    </p>
-                    <a href="https://github.com/GrazerDev/Nova" class="block w-full text-center py-3 rounded-lg btn-primary font-bold text-sm">
-                        Contribute Code
-                    </a>
-                </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                <div class="card rounded-xl p-6">
-                    <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Environment</h3>
-                    <div class="space-y-3 text-xs mono">
-                        <div class="flex justify-between">
-                            <span class="text-slate-500">Compiler</span>
-                            <span class="text-slate-300">Clang/LLVM 18</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-500">Optimize</span>
-                            <span class="text-slate-300">-O3</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-500">Runtime</span>
-                            <span class="text-slate-300">WASM</span>
-                        </div>
-                    </div>
-                </div>
+      <!-- LEADERBOARD -->
+      <div class="lg:col-span-2">
+        <div class="term rounded-md overflow-hidden">
+          <div class="term-head px-6 py-3 flex justify-between items-center">
+            <span class="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted)]">./rankings --sort=time</span>
+            <span class="text-[11px]" style="color:var(--amber-dim)">N=1,000,000</span>
+          </div>
+          <div id="leaderboard">
+            <div class="px-6 py-10 text-center text-[var(--muted)] italic text-sm">connecting to node<span class="cursor"></span></div>
+          </div>
+          <div id="stats-strip" class="hidden grid grid-cols-3 divide-x text-center" style="border-top:1px solid var(--line); border-color:var(--line)">
+            <div class="px-3 py-3">
+              <div class="display text-sm font-bold" style="color:var(--amber)"><span id="stat-count">—</span></div>
+              <div class="text-[10px] text-[var(--muted)] uppercase tracking-wider mt-0.5">submissions</div>
             </div>
+            <div class="px-3 py-3">
+              <div class="display text-sm font-bold" style="color:var(--amber)"><span id="stat-avg">—</span>ms</div>
+              <div class="text-[10px] text-[var(--muted)] uppercase tracking-wider mt-0.5">field average</div>
+            </div>
+            <div class="px-3 py-3">
+              <div class="display text-sm font-bold" style="color:var(--amber)"><span id="stat-spread">—</span>ms</div>
+              <div class="text-[10px] text-[var(--muted)] uppercase tracking-wider mt-0.5">1st &rarr; last spread</div>
+            </div>
+          </div>
         </div>
 
-        <footer class="mt-12 pt-6 border-t border-slate-800 text-center">
-            <p class="text-xs text-slate-500 mono">Host: novaforge.work.gd | Powered by GitHub Actions</p>
-        </footer>
+        <!-- KING'S RECORD -->
+        <div class="term rounded-md overflow-hidden mt-6">
+          <div class="term-head px-6 py-3">
+            <span class="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted)]">./throne --status</span>
+          </div>
+          <div id="arena-status" class="px-6 py-6 md:px-8 md:py-7">
+            <div class="text-[var(--muted)] text-xs mb-2">current king's record</div>
+            <div class="display text-3xl md:text-4xl font-extrabold glow" style="color:var(--amber)">
+              <span id="record-time">loading&hellip;</span>
+            </div>
+            <div class="text-[var(--muted)] text-xs mt-3">
+              last defended <span id="last-updated" class="text-[var(--parchment)]">—</span>
+            </div>
+            <a href="https://github.com/GrazerDev/Nova"
+               class="btn-op inline-block mt-5 px-5 py-2.5 rounded font-bold text-xs uppercase tracking-wider focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+               style="--tw-ring-color:var(--amber); --tw-ring-offset-color:var(--panel)">
+              ⚔ Challenge the King
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="space-y-6">
+        <div class="term rounded-md p-6">
+          <div class="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted)] mb-3">The Challenge</div>
+          <p class="text-sm text-[var(--parchment)]/90 leading-relaxed mb-5">
+            Optimize the <span style="color:var(--amber)">src/core.cpp</span> sieve algorithm.
+            Submit a PR to trigger the automated benchmark run.
+          </p>
+          <a href="https://github.com/GrazerDev/Nova"
+             class="btn-op block w-full text-center py-2.5 rounded font-bold text-xs uppercase tracking-wider focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+             style="--tw-ring-color:var(--amber); --tw-ring-offset-color:var(--panel)">
+            Contribute Code
+          </a>
+          <button id="copy-clone" type="button"
+             class="mt-3 w-full flex items-center justify-between gap-2 px-3 py-2 rounded text-[11px] border focus:outline-none focus-visible:ring-2"
+             style="background:var(--panel-2); border-color:var(--line); color:var(--parchment); --tw-ring-color:var(--amber)">
+            <span class="truncate">$ git clone GrazerDev/Nova.git</span>
+            <span id="copy-label" class="uppercase tracking-wider shrink-0" style="color:var(--amber-dim)">copy</span>
+          </button>
+        </div>
+
+        <div class="term rounded-md p-6">
+          <div class="text-[11px] font-semibold uppercase tracking-widest text-[var(--muted)] mb-3">Environment</div>
+          <div class="divider text-xs leading-relaxed">
+compiler   Clang/LLVM 18
+optimize   -O3
+runtime    WASM
+          </div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        async function fetchRanks() {
-            try {
-                const res = await fetch('leaderboard.json');
-                const data = await res.json();
-                document.getElementById('leaderboard').innerHTML = data.rankings.map((r, i) => `
-                    <div class="rank-row px-6 py-4 flex justify-between items-center">
-                        <div class="flex items-center gap-4">
-                            <span class="text-slate-500 font-bold w-4">${i+1}</span>
-                            <div>
-                                <div class="font-semibold text-slate-200">@${r.user}</div>
-                                <div class="text-[10px] text-slate-500">${r.date}</div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-lg font-bold text-sky-400 mono">${r.score}<span class="text-[10px] ml-1 text-slate-500">ms</span></div>
+    <footer class="mt-10 pt-5 border-t text-center text-[11px] text-[var(--muted)]" style="border-color:var(--line)">
+      host: Grazer
+    </footer>
+  </div>
+
+  <script>
+    async function fetchRanks() {
+        try {
+            const res = await fetch('leaderboard.json');
+            const data = await res.json();
+            const rankings = data.rankings;
+            const leaderScore = rankings[0].score;
+
+            document.getElementById('leaderboard').innerHTML = rankings.map((r, i) => {
+                const gap = r.score - leaderScore;
+                const gapLabel = i === 0
+                    ? `<span class="text-[10px] uppercase tracking-wider" style="color:var(--green)">leader</span>`
+                    : `<span class="text-[10px] text-[var(--muted)]">+${gap}ms back</span>`;
+                return `
+                <div class="row px-6 py-4 flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <span class="rank-num font-bold w-8 text-sm">${String(i+1).padStart(3,'0')}</span>
+                        <div>
+                            <div class="font-semibold text-[var(--parchment)] text-sm">@${r.user}</div>
+                            <div class="text-[10px] text-[var(--muted)]">${r.date}</div>
                         </div>
                     </div>
-                `).join('');
-            } catch(e) { 
-                document.getElementById('leaderboard').innerHTML = '<div class="p-8 text-red-400 text-center">Failed to load rankings.</div>';
-            }
-        }
-        fetchRanks();
-    </script>
-</body>
-</html>
-<div id="arena-status">
-    <h1>Current King's Record: <span id="record-time">Loading...</span></h1>
-    <p>Last Defended: <span id="last-updated">-</span></p>
-    <a href="https://github.com/GrazerDev/Nova">⚔️ Challenge the King</a>
-</div>
+                    <div class="text-right">
+                        <div class="display text-lg font-bold glow-sm" style="color:var(--amber)">${r.score}<span class="text-[10px] ml-1 text-[var(--muted)]">ms</span></div>
+                        <div class="mt-0.5">${gapLabel}</div>
+                    </div>
+                </div>`;
+            }).join('');
 
-<script>
+            // derived field stats — computed straight from the same payload, no extra fetch
+            const scores = rankings.map(r => r.score);
+            const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+            const spread = Math.max(...scores) - Math.min(...scores);
+            document.getElementById('stat-count').textContent = rankings.length;
+            document.getElementById('stat-avg').textContent = avg;
+            document.getElementById('stat-spread').textContent = spread;
+            document.getElementById('stats-strip').classList.remove('hidden');
+        } catch(e) { 
+            document.getElementById('leaderboard').innerHTML = '<div class="p-8 text-center text-sm" style="color:var(--red)">failed to load rankings.</div>';
+        }
+    }
+    fetchRanks();
+
+    // clipboard copy for the clone command — quiet confirm, reverts on its own
+    const copyBtn = document.getElementById('copy-clone');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+            const label = document.getElementById('copy-label');
+            try {
+                await navigator.clipboard.writeText('git clone https://github.com/GrazerDev/Nova.git');
+                label.textContent = 'copied';
+                label.style.color = 'var(--green)';
+            } catch(e) {
+                label.textContent = 'select & copy';
+            }
+            setTimeout(() => {
+                label.textContent = 'copy';
+                label.style.color = 'var(--amber-dim)';
+            }, 1800);
+        });
+    }
+
     // This pulls the data the bot just generated!
     fetch('stats.json')
         .then(res => res.json())
@@ -142,4 +307,6 @@
             document.getElementById('last-updated').innerText = new Date(data.last_run).toLocaleDateString();
         })
         .catch(err => console.log("Arena is initializing..."));
-</script>
+  </script>
+</body>
+</html>
