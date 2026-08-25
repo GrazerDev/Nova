@@ -4,8 +4,6 @@ on:
     branches: [ main ]
     paths-ignore:
       - 'docs/leaderboard.json'
-      - 'docs/engine.js'
-      - 'docs/engine.wasm'
       - 'README.md'
   pull_request:
     branches: [ main ]
@@ -30,7 +28,26 @@ jobs:
         run: |
           em++ src/core.cpp -O3 \
           -s WASM=1 \
-          -s ALLOW_MEMORY_GROWTH=1 \
+          -s MODULARIZE=1 \
+          -s EXPORT_NAME="createModule" \
           -s EXPORTED_FUNCTIONS="['_run_challenge']" \
           -s EXPORTED_RUNTIME_METHODS="['cwrap']" \
           -o docs/engine.js
+
+      - name: ⏱️ Run Benchmark
+        run: node judge.js
+
+      - name: 📊 Save Performance Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-stats
+          path: stats.json
+
+      - name: ✅ Update Docs (Auto-Deploy)
+        if: github.event_name == 'push'
+        run: |
+          git config --global user.name "NovaForge Bot"
+          git config --global user.email "bot@novaforge.engine"
+          git add docs/engine.js docs/engine.wasm
+          git commit -m "🚀 Automated Build: Update WASM Engine" || echo "No changes to commit"
+          git push
