@@ -188,9 +188,6 @@
             <div class="display text-3xl md:text-4xl font-extrabold glow" style="color:var(--amber)">
               <span id="record-time">loading&hellip;</span>
             </div>
-            <div class="text-[var(--muted)] text-xs mt-3">
-              last defended <span id="last-updated" class="text-[var(--parchment)]">—</span>
-            </div>
             <a href="https://github.com/GrazerDev/Nova"
                class="btn-op inline-block mt-5 px-5 py-2.5 rounded font-bold text-xs uppercase tracking-wider focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                style="--tw-ring-color:var(--amber); --tw-ring-offset-color:var(--panel)">
@@ -256,7 +253,6 @@ runtime    WASM
                         <span class="rank-num font-bold w-8 text-sm">${String(i+1).padStart(3,'0')}</span>
                         <div>
                             <div class="font-semibold text-[var(--parchment)] text-sm">@${r.user}</div>
-                            <div class="text-[10px] text-[var(--muted)]">${r.date}</div>
                         </div>
                     </div>
                     <div class="text-right">
@@ -304,7 +300,6 @@ runtime    WASM
         .then(res => res.json())
         .then(data => {
             document.getElementById('record-time').innerText = data.time_ms + "ms";
-            document.getElementById('last-updated').innerText = new Date(data.last_run).toLocaleDateString();
         })
         .catch(err => console.log("Arena is initializing..."));
   </script>
